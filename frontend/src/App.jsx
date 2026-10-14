@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from 'react';
 import './App.css';
 
@@ -124,29 +125,6 @@ function App() {
       setMessage(
         `Job #${job.id} created · ${job.priority} priority · ${job.reason}`
       );
-      await refresh();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function runDemo(type) {
-    setBusy(true);
-    setError('');
-    setMessage('');
-
-    try {
-      const result = await request(`/api/demo/${type}`, {
-        method: 'POST',
-      });
-
-      const summary = result.created
-        ? `${result.created} jobs created successfully.`
-        : `Job #${result.id} created · ${result.priority} priority.`;
-
-      setMessage(summary);
       await refresh();
     } catch (err) {
       setError(err.message);
@@ -292,51 +270,7 @@ function App() {
           </div>
         </section>
 
-        <section id="submit" className="section-block">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow">CONTROLLED TESTING</div>
-              <h2>Run a demo scenario</h2>
-            </div>
-          </div>
-
-          <div className="demo-grid">
-            <DemoCard
-              icon="◷"
-              title="Routine batch"
-              description="Create 30 scheduled report jobs routed to LOW."
-              label="Create 30 jobs"
-              disabled={busy}
-              onClick={() => runDemo('bulk')}
-            />
-            <DemoCard
-              icon="▤"
-              title="Normal document"
-              description="Simulate a policy conversion routed to MEDIUM."
-              label="Run normal"
-              disabled={busy}
-              onClick={() => runDemo('normal')}
-            />
-            <DemoCard
-              icon="⚖"
-              title="Legal contract"
-              description="Simulate legal OCR routed to HIGH."
-              label="Run legal"
-              disabled={busy}
-              onClick={() => runDemo('legal')}
-            />
-            <DemoCard
-              icon="⚡"
-              title="Security incident"
-              description="Simulate emergency extraction at HIGH priority."
-              label="Trigger emergency"
-              disabled={busy}
-              onClick={() => runDemo('emergency')}
-            />
-          </div>
-        </section>
-
-        <section className="section-block forms-grid">
+        <section id="submit" className="section-block forms-grid">
           <article className="panel">
             <div className="eyebrow">DOCUMENT INGESTION</div>
             <h2>Upload a document</h2>
@@ -421,7 +355,7 @@ function App() {
                 {jobs.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="empty-cell">
-                      No jobs found. Run a demo to get started.
+                      No jobs found. Upload a document or create a job to get started.
                     </td>
                   </tr>
                 ) : jobs.map((job) => (
@@ -431,8 +365,16 @@ function App() {
                       <strong>{job.operation}</strong>
                       <span className="table-secondary">{job.filename || 'No document'}</span>
                     </td>
-                    <td><span className={`priority-pill ${String(job.priority || '').toLowerCase()}`}>{job.priority}</span></td>
-                    <td><span className={`status-pill ${String(job.status || '').toLowerCase()}`}>{job.status}</span></td>
+                    <td>
+                      <span className={`priority-pill ${String(job.priority || '').toLowerCase()}`}>
+                        {job.priority}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-pill ${String(job.status || '').toLowerCase()}`}>
+                        {job.status}
+                      </span>
+                    </td>
                     <td>{job.worker || '—'}</td>
                     <td>{job.created_at ? new Date(job.created_at).toLocaleTimeString() : '—'}</td>
                   </tr>
@@ -457,7 +399,9 @@ function App() {
               </thead>
               <tbody>
                 {schedules.length === 0 ? (
-                  <tr><td colSpan="4" className="empty-cell">No schedules configured yet.</td></tr>
+                  <tr>
+                    <td colSpan="4" className="empty-cell">No schedules configured yet.</td>
+                  </tr>
                 ) : schedules.map((schedule) => (
                   <tr key={schedule.id}>
                     <td>#{schedule.id}</td>
@@ -494,19 +438,6 @@ function StatCard({ label, value, note }) {
       <span>{label}</span>
       <strong>{value}</strong>
       <small>{note}</small>
-    </article>
-  );
-}
-
-function DemoCard({ icon, title, description, label, disabled, onClick }) {
-  return (
-    <article className="demo-card">
-      <div className="demo-icon">{icon}</div>
-      <h3>{title}</h3>
-      <p>{description}</p>
-      <button className="button secondary" onClick={onClick} disabled={disabled}>
-        {label} →
-      </button>
     </article>
   );
 }

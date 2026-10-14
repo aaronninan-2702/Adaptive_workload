@@ -1,3 +1,4 @@
+
 #root {
   min-height: 100vh;
 }
@@ -362,7 +363,6 @@ h3 {
 
 .stat-card,
 .queue-card,
-.demo-card,
 .panel {
   border: 1px solid #242d42;
   background: #111827;
@@ -510,45 +510,6 @@ h3 {
   color: #94a2bc;
   font-size: 10px;
   margin-top: 14px;
-}
-
-.demo-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.demo-card {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
-}
-
-.demo-icon {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  color: #b7c0ff;
-  background: #252e50;
-  margin-bottom: 14px;
-}
-
-.demo-card p {
-  font-size: 11px;
-  line-height: 1.7;
-  color: #8e9bb5;
-  min-height: 55px;
-  margin-bottom: 15px;
-}
-
-.demo-card .button {
-  margin-top: auto;
-  width: 100%;
-  padding-inline: 5px;
 }
 
 .forms-grid {
@@ -718,10 +679,6 @@ tbody tr:hover {
   .app-shell {
     grid-template-columns: 210px minmax(0, 1fr);
   }
-
-  .demo-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 850px) {
@@ -783,18 +740,6 @@ tbody tr:hover {
   .queue-grid,
   .forms-grid {
     grid-template-columns: 1fr;
-  }
-
-  .demo-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .demo-card {
-    padding: 12px;
-  }
-
-  .demo-card p {
-    min-height: 70px;
   }
 
   .topbar {
