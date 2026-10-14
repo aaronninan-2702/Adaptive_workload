@@ -1,4 +1,74 @@
+
 services:
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    ports:
+      - "8081:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  worker-high:
+    build: ./worker
+    environment:
+      WORKER_PRIORITY: HIGH
+      CONCURRENCY: "3"
+      DURATION_SCALE: ${DURATION_SCALE:-0.25}
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker-medium:
+    build: ./worker
+    environment:
+      WORKER_PRIORITY: MEDIUM
+      CONCURRENCY: "2"
+      DURATION_SCALE: ${DURATION_SCALE:-0.25}
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker-low:
+    build: ./worker
+    environment:
+      WORKER_PRIORITY: LOW
+      CONCURRENCY: "1"
+      DURATION_SCALE: ${DURATION_SCALE:-0.25}
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
