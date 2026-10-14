@@ -6,6 +6,14 @@ import { queues, connection } from './queues.js';
 import { createDocument, createJob, OPERATIONS } from './jobs.js';
 import { addSchedule, removeSchedule, runNow, startScheduler } from './scheduler.js';
 
+import {
+  runBulkDemo,
+  runNormalDemo,
+  runLegalDemo,
+  runEmergencyDemo,
+  resetDemo
+} from './demo.js';
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -85,6 +93,28 @@ app.delete('/api/schedules/:id', route(async (req, res) => {
 
 app.post('/api/schedules/:id/run', route(async (req, res) => {
   res.json(await runNow(req.params.id));
+}));
+
+
+ // ---------- demo endpoints ----------
+app.post('/api/demo/bulk', route(async (req, res) => {
+  res.json(await runBulkDemo());
+}));
+
+app.post('/api/demo/normal', route(async (req, res) => {
+  res.json(await runNormalDemo());
+}));
+
+app.post('/api/demo/legal', route(async (req, res) => {
+  res.json(await runLegalDemo());
+}));
+
+app.post('/api/demo/emergency', route(async (req, res) => {
+  res.json(await runEmergencyDemo());
+}));
+
+app.post('/api/demo/reset', route(async (req, res) => {
+  res.json(await resetDemo());
 }));
 
 // ---------- start ----------
