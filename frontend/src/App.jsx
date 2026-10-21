@@ -15,6 +15,27 @@ async function request(path, options = {}) {
   return data;
 }
 
+const FREQUENCY_LABELS = {
+  '0 * * * *': 'Hourly',
+  '0 18 * * *': 'Daily',
+};
+
+function frequencyLabel(schedule) {
+  if (schedule.preset) {
+    return String(schedule.preset).replace(/^./, (letter) => letter.toUpperCase());
+  }
+
+  return FREQUENCY_LABELS[schedule.cron] || schedule.cron || '—';
+}
+
+function metaSummary(meta) {
+  if (!meta) return '';
+
+  return Object.entries(meta)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(' · ');
+}
+
 function App() {
   const [jobs, setJobs] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -28,6 +49,13 @@ function App() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [scheduleOperation, setScheduleOperation] = useState('REPORT');
+  const [schedulePreset, setSchedulePreset] = useState('hourly');
+  const [schedulesLoaded, setSchedulesLoaded] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [jobEvents, setJobEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState('');
 
   const refresh = useCallback(async () => {
     const endpoints = [
@@ -35,7 +63,10 @@ function App() {
       ['/api/documents', setDocuments],
       ['/api/queues', setQueues],
       ['/api/workers', setWorkers],
-      ['/api/schedules', setSchedules],
+      ['/api/schedules', (data) => {
+        setSchedules(data);
+        setSchedulesLoaded(true);
+      }],
     ];
 
     const results = await Promise.allSettled(
@@ -53,7 +84,16 @@ function App() {
       setError('');
       setLastUpdated(new Date());
     }
-  }, []);
+
+    if (selectedJob) {
+      try {
+        setJobEvents(await request(`/api/jobs/${selectedJob}/log`));
+        setEventsError('');
+      } catch (err) {
+        setEventsError(err.message);
+      }
+    }
+  }, [selectedJob]);
 
   useEffect(() => {
     refresh();
@@ -133,22 +173,86 @@ function App() {
     }
   }
 
+  async function createSchedule(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const schedule = await request('/api/schedules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operation: scheduleOperation, preset: schedulePreset }),
+      });
+
+      setMessage(
+        `Schedule #${schedule.id} created · ${schedule.operation} · ${frequencyLabel(schedule)}.`
+      );
+      await refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function runSchedule(id) {
     setBusy(true);
     setError('');
     setMessage('');
 
     try {
-      const result = await request(`/api/schedules/${id}/run`, {
+      const job = await request(`/api/schedules/${id}/run`, {
         method: 'POST',
       });
 
-      setMessage(`Schedule triggered: ${JSON.stringify(result)}`);
+      setMessage(
+        `Schedule #${id} triggered: job #${job.id} created · ${job.priority} priority · ${job.reason}`
+      );
       await refresh();
     } catch (err) {
       setError(err.message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function deleteSchedule(id) {
+    setBusy(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await request(`/api/schedules/${id}`, { method: 'DELETE' });
+      setMessage(`Schedule #${id} deleted.`);
+      await refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleJobLog(jobId) {
+    if (selectedJob === jobId) {
+      setSelectedJob(null);
+      setJobEvents([]);
+      setEventsError('');
+      return;
+    }
+
+    setSelectedJob(jobId);
+    setJobEvents([]);
+    setEventsError('');
+    setEventsLoading(true);
+
+    try {
+      setJobEvents(await request(`/api/jobs/${jobId}/log`));
+    } catch (err) {
+      setEventsError(err.message);
+    } finally {
+      setEventsLoading(false);
     }
   }
 
@@ -349,17 +453,18 @@ function App() {
                   <th>Status</th>
                   <th>Worker</th>
                   <th>Created</th>
+                  <th>Events</th>
                 </tr>
               </thead>
               <tbody>
                 {jobs.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="empty-cell">
+                    <td colSpan="7" className="empty-cell">
                       No jobs found. Upload a document or create a job to get started.
                     </td>
                   </tr>
                 ) : jobs.map((job) => (
-                  <tr key={job.id}>
+                  <tr key={job.id} className={selectedJob === job.id ? 'row-selected' : ''}>
                     <td className="job-id">#{job.id}</td>
                     <td>
                       <strong>{job.operation}</strong>
@@ -377,11 +482,55 @@ function App() {
                     </td>
                     <td>{job.worker || '—'}</td>
                     <td>{job.created_at ? new Date(job.created_at).toLocaleTimeString() : '—'}</td>
+                    <td>
+                      <button
+                        className="button small secondary"
+                        onClick={() => toggleJobLog(job.id)}
+                      >
+                        {selectedJob === job.id ? 'Hide' : 'Timeline'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {selectedJob && (
+            <div className="timeline-panel">
+              <div className="timeline-heading">
+                <strong>Job #{selectedJob} event timeline</strong>
+                <button className="button small secondary" onClick={() => toggleJobLog(selectedJob)}>
+                  Close
+                </button>
+              </div>
+
+              {eventsLoading && <p className="subtle">Loading events…</p>}
+              {eventsError && <div className="notice error-notice">{eventsError}</div>}
+              {!eventsLoading && !eventsError && jobEvents.length === 0 && (
+                <p className="subtle">
+                  No events recorded for this job yet. Events appear as the backend routes the job
+                  and workers pick it up.
+                </p>
+              )}
+
+              {!eventsLoading && jobEvents.length > 0 && (
+                <ol className="timeline">
+                  {jobEvents.map((entry, index) => (
+                    <li className="timeline-item" key={`${entry.event}-${index}`}>
+                      <span className={`event-pill ${String(entry.event || '').toLowerCase()}`}>
+                        {entry.event}
+                      </span>
+                      <span className="timeline-time">
+                        {entry.at ? new Date(entry.at).toLocaleTimeString() : '—'}
+                      </span>
+                      <span className="timeline-meta">{metaSummary(entry.meta) || '—'}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          )}
         </section>
 
         <section id="schedules" className="section-block">
@@ -390,31 +539,98 @@ function App() {
               <div className="eyebrow">AUTOMATION</div>
               <h2>Schedules</h2>
             </div>
+            <span className="subtle">REPORT or ANALYTICS · hourly or daily</span>
           </div>
 
-          <div className="table-wrap">
+          <article className="panel">
+            <div className="eyebrow">NEW SCHEDULE</div>
+            <h2>Create a schedule</h2>
+            <p className="panel-description">
+              Scheduled runs go through the same job engine, so priority is decided automatically.
+            </p>
+            <form onSubmit={createSchedule} className="schedule-form">
+              <div className="schedule-field">
+                <label htmlFor="schedule-operation">Operation</label>
+                <select
+                  id="schedule-operation"
+                  value={scheduleOperation}
+                  onChange={(event) => setScheduleOperation(event.target.value)}
+                >
+                  <option value="REPORT">REPORT</option>
+                  <option value="ANALYTICS">ANALYTICS</option>
+                </select>
+              </div>
+
+              <div className="schedule-field">
+                <label htmlFor="schedule-preset">Frequency</label>
+                <select
+                  id="schedule-preset"
+                  value={schedulePreset}
+                  onChange={(event) => setSchedulePreset(event.target.value)}
+                >
+                  <option value="hourly">Hourly (every hour)</option>
+                  <option value="daily">Daily (18:00 IST)</option>
+                </select>
+              </div>
+
+              <button className="button primary" disabled={busy}>
+                {busy ? 'Please wait…' : 'Create schedule'}
+              </button>
+            </form>
+          </article>
+
+          <div className="table-wrap schedules-table">
             <table>
               <thead>
-                <tr><th>ID</th><th>Operation</th><th>Preset</th><th>Action</th></tr>
+                <tr>
+                  <th>ID</th>
+                  <th>Operation</th>
+                  <th>Frequency</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
               </thead>
               <tbody>
-                {schedules.length === 0 ? (
+                {!schedulesLoaded ? (
                   <tr>
-                    <td colSpan="4" className="empty-cell">No schedules configured yet.</td>
+                    <td colSpan="5" className="empty-cell">Loading schedules…</td>
+                  </tr>
+                ) : schedules.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="empty-cell">
+                      No schedules configured yet. Create one above to run REPORT or ANALYTICS
+                      automatically.
+                    </td>
                   </tr>
                 ) : schedules.map((schedule) => (
                   <tr key={schedule.id}>
-                    <td>#{schedule.id}</td>
-                    <td>{schedule.operation}</td>
-                    <td>{schedule.preset}</td>
+                    <td className="job-id">#{schedule.id}</td>
+                    <td><strong>{schedule.operation}</strong></td>
+                    <td>{frequencyLabel(schedule)}</td>
                     <td>
-                      <button
-                        className="button small secondary"
-                        disabled={busy}
-                        onClick={() => runSchedule(schedule.id)}
+                      <span
+                        className={`status-pill ${schedule.enabled === false ? 'failed' : 'completed'}`}
                       >
-                        Run now
-                      </button>
+                        {schedule.enabled === false ? 'DISABLED' : 'ENABLED'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          className="button small secondary"
+                          disabled={busy}
+                          onClick={() => runSchedule(schedule.id)}
+                        >
+                          Run now
+                        </button>
+                        <button
+                          className="button small danger"
+                          disabled={busy}
+                          onClick={() => deleteSchedule(schedule.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

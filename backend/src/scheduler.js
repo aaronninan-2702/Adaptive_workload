@@ -39,7 +39,9 @@ export async function runNow(id) {
 export async function startScheduler() {
   new Worker('scheduler',
     async (job) => { await createJob({ operation: job.data.operation, source: 'SCHEDULED' }); },
-    { connection });
+    { connection })
+    .on('error', (err) => console.error(`[scheduler] worker error: ${err.message}`))
+    .on('failed', (job, err) => console.error(`[scheduler] trigger failed: ${err.message}`));
   const { rows } = await query('select * from schedules where enabled');
   for (const s of rows) await register(s);   // re-register after a restart
 }

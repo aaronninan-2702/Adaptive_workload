@@ -662,6 +662,149 @@ tbody tr:hover {
   padding: 7px 10px;
 }
 
+.danger {
+  color: #ff9da9;
+  border-color: #5a2a38;
+  background: #2a1520;
+}
+
+.danger:hover {
+  background: #45212b;
+  border-color: #8a4257;
+}
+
+.schedule-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.schedule-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.schedule-field label {
+  font-size: 11px;
+  color: #aeb8cd;
+}
+
+.schedule-field select {
+  width: 100%;
+  min-width: 0;
+  color: #e1e7f5;
+  background: #0c1322;
+  border: 1px solid #303a52;
+  border-radius: 7px;
+  padding: 10px;
+  font-size: 11px;
+}
+
+.schedule-field option {
+  background: #111827;
+}
+
+.schedules-table {
+  margin-top: 14px;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.row-selected {
+  background: #161f31;
+  box-shadow: inset 3px 0 #8491ff;
+}
+
+.timeline-panel {
+  margin-top: 13px;
+  border: 1px solid #242d42;
+  background: #111827;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.timeline-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.timeline-heading strong {
+  font-size: 12px;
+  color: #dfe5f8;
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 96px 86px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #222b3e;
+  border-radius: 7px;
+  background: #0e1524;
+}
+
+.timeline-time {
+  font-size: 10px;
+  color: #8290aa;
+}
+
+.timeline-meta {
+  font-size: 10px;
+  color: #9aa7c0;
+  overflow-wrap: anywhere;
+}
+
+.event-pill {
+  display: inline-flex;
+  justify-self: start;
+  padding: 4px 7px;
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.event-pill.created,
+.event-pill.routed {
+  color: #9dbbff;
+  background: #202f4b;
+}
+
+.event-pill.started {
+  color: #f2ca7d;
+  background: #40341e;
+}
+
+.event-pill.completed {
+  color: #8ee3c1;
+  background: #16382f;
+}
+
+.event-pill.failed {
+  color: #ff9da9;
+  background: #45212b;
+}
+
 .footer {
   margin-top: 38px;
   padding-top: 17px;
@@ -740,6 +883,11 @@ tbody tr:hover {
   .queue-grid,
   .forms-grid {
     grid-template-columns: 1fr;
+  }
+
+  .timeline-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .topbar {

@@ -1,11 +1,9 @@
 import { query } from './db.js';
 import { queues } from './queues.js';
 import { score, classify } from './engine.js';
+import { logEvent } from './events.js';
 
 export const OPERATIONS = ['OCR', 'EXTRACTION', 'CONVERSION', 'REPORT', 'ANALYTICS'];
-
-const logEvent = (jobId, event, meta = {}) =>
-  query('insert into job_events (job_id, event, meta) values ($1, $2, $3)', [jobId, event, meta]);
 
 export async function createDocument({ filename, size = 0 }) {
   const category = classify(filename);

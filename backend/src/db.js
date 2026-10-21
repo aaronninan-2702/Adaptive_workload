@@ -6,4 +6,8 @@ export const pool = new pg.Pool({
   max: 5,
 });
 
+pool.on('error', (err) => {
+  console.error(`[db] idle client error: ${err.message}`);
+});
+
 export const query = (text, params) => pool.query(text, params);

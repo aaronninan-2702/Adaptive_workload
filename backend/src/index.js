@@ -18,7 +18,10 @@ const upload = multer({
 });
 
 const route = (fn) => (req, res) =>
-  fn(req, res).catch((e) => res.status(400).json({ error: e.message }));
+  fn(req, res).catch((e) => {
+    console.error(`[api] ${req.method} ${req.originalUrl} failed: ${e.message}`);
+    res.status(400).json({ error: e.message });
+  });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
@@ -146,6 +149,10 @@ app.post('/api/schedules/:id/run', route(async (req, res) => {
 // ---------- start ----------
 const PORT = process.env.PORT || 3000;
 
-startScheduler().then(() => {
-  app.listen(PORT, () => console.log('backend on :' + PORT));
-});
+startScheduler()
+  .catch((err) => {
+    console.error(`[scheduler] failed to start: ${err.message}`);
+  })
+  .finally(() => {
+    app.listen(PORT, () => console.log('backend on :' + PORT));
+  });
