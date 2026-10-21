@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-high
+  labels:
+    app: worker-high
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-high
+  template:
+    metadata:
+      labels:
+        app: worker-high
+    spec:
+      nodeSelector:
+        workload-role: high
+      containers:
+        - name: adaptive-workload-worker-high
+          image: adaptive-workload-worker-high:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: adaptive-workload-secrets
+                  key: DATABASE_URL
+            - name: REDIS_URL
+              value: redis://redis:6379
+            - name: WORKER_PRIORITY
+              value: HIGH
+            - name: CONCURRENCY
+              value: "3"
+            - name: DURATION_SCALE
+              value: "0.25"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-medium
+  labels:
+    app: worker-medium
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-medium
+  template:
+    metadata:
+      labels:
+        app: worker-medium
+    spec:
+      nodeSelector:
+        workload-role: medium
+      containers:
+        - name: adaptive-workload-worker-medium
+          image: adaptive-workload-worker-medium:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: adaptive-workload-secrets
+                  key: DATABASE_URL
+            - name: REDIS_URL
+              value: redis://redis:6379
+            - name: WORKER_PRIORITY
+              value: MEDIUM
+            - name: CONCURRENCY
+              value: "2"
+            - name: DURATION_SCALE
+              value: "0.25"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-low
+  labels:
+    app: worker-low
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-low
+  template:
+    metadata:
+      labels:
+        app: worker-low
+    spec:
+      nodeSelector:
+        workload-role: low
+      containers:
+        - name: adaptive-workload-worker-low
+          image: adaptive-workload-worker-low:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: adaptive-workload-secrets
+                  key: DATABASE_URL
+            - name: REDIS_URL
+              value: redis://redis:6379
+            - name: WORKER_PRIORITY
+              value: LOW
+            - name: CONCURRENCY
+              value: "1"
+            - name: DURATION_SCALE
+              value: "0.25"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi

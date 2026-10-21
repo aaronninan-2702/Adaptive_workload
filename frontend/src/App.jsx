@@ -2,7 +2,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import './App.css';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Request paths below already start with /api. In the container/Kubernetes build
+// VITE_API_URL is an empty string (same-origin, proxied by nginx), so use `??`
+// rather than `||`: an empty string must NOT fall back to localhost. The localhost
+// default only applies to a plain `vite dev` run where the variable is undefined.
+const API = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
 
 async function request(path, options = {}) {
   const response = await fetch(`${API}${path}`, options);
@@ -278,7 +282,7 @@ function App() {
           <div className="live-dot" />
           <div>
             <strong>Local environment</strong>
-            <span>API · {API}</span>
+            <span>API · {API || 'same-origin /api'}</span>
           </div>
         </div>
       </aside>
