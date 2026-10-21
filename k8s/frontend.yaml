@@ -18,8 +18,8 @@ spec:
         workload-role: application
       containers:
         - name: adaptive-workload-frontend
-          image: adaptive-workload-frontend:latest
-          imagePullPolicy: IfNotPresent
+          image: adaptive-workload-frontend:fix1
+          imagePullPolicy: Never
           ports:
             - containerPort: 80
           env:
